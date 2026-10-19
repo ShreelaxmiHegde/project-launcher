@@ -1,0 +1,23 @@
+{
+  "shortcut": "Control+Alt+P",
+  "vscodeCommand": "code",
+  "categories": [
+    {
+      "name": "SoftwareEngineering",
+      "path": "D:\\SoftwareEngineering\\explorr",
+      "projects": [
+        { "name": "Billing API", "path": "D:\\SoftwareEngineering\\explorr\\project-launcher" },
+        { "name": "Admin Portal", "path": "D:\\SoftwareEnigneering" },
+        { "name": "Mobile App", "path": "D:\\SoftwareEnigneering"}
+      ]
+    },
+    {
+      "name": "Personal",
+      "path": "D:\\SoftwareEnigneering\\Personal",
+      "projects": [
+        { "name": "Dotfiles", "path": "D:\\SoftwareEnigneering" },
+        { "name": "Blog", "path": "D:\\SoftwareEnigneering" }
+      ]
+    }
+  ]
+}
