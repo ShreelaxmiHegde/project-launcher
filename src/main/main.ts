@@ -15,17 +15,17 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getConfigPath, loadConfig } from './config';
-import type { LoadResult, OpenResult, OpenTarget } from '../shared/types';
+import { isConfiguredParent, isProjectPath, scanParent } from './scan';
+import type { LoadResult, OpenResult, OpenTarget, ScanResult } from '../shared/types';
 
-const WIN_WIDTH = 380;
-const WIN_HEIGHT = 392;
+const WIN_WIDTH = 460;
+const WIN_HEIGHT = 520;
 const SCREEN_MARGIN = 12;
 const DEV_URL = process.env.VITE_DEV_SERVER_URL;
 
 let win: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let lastResult: LoadResult = loadConfig();
-let allowedPaths = new Set<string>();
 let registeredShortcut: string | null = null;
 let failedShortcut: string | null = null;
 
@@ -33,9 +33,6 @@ let failedShortcut: string | null = null;
 
 function applyConfig(): void {
   lastResult = loadConfig();
-  allowedPaths = new Set(
-    lastResult.config.categories.flatMap((c) => c.projects.map((p) => p.path))
-  );
   registerShortcut(lastResult.config.shortcut);
 }
 
@@ -215,15 +212,23 @@ function launchVsCode(command: string, folder: string): Promise<OpenResult> {
 function registerIpc(): void {
   ipcMain.handle('launcher:get-config', (): LoadResult => lastResult);
 
+  ipcMain.handle('launcher:scan', async (_event, parentPath: unknown): Promise<ScanResult> => {
+    const parents = lastResult.config.parentFolders;
+    if (typeof parentPath !== 'string' || !isConfiguredParent(parents, parentPath)) {
+      return { parent: String(parentPath), categories: [], error: 'That folder is not listed in projects.json.' };
+    }
+    return scanParent(parentPath);
+  });
+
   ipcMain.handle(
     'launcher:open',
     async (_event, projectPath: unknown, target: unknown): Promise<OpenResult> => {
       if (typeof projectPath !== 'string' || (target !== 'vscode' && target !== 'explorer')) {
         return { ok: false, error: 'Invalid request.' };
       }
-      // Only paths listed in projects.json may be opened.
-      if (!allowedPaths.has(projectPath)) {
-        return { ok: false, error: 'That project is not in projects.json.' };
+      // Only folders two levels below a configured parent folder may be opened.
+      if (!isProjectPath(lastResult.config.parentFolders, projectPath)) {
+        return { ok: false, error: 'That folder is not inside a configured parent folder.' };
       }
       if (!fs.existsSync(projectPath)) {
         return { ok: false, error: `Folder not found: ${projectPath}` };
@@ -276,4 +281,3 @@ if (!app.requestSingleInstanceLock()) {
   app.on('window-all-closed', () => {});
   app.on('will-quit', () => globalShortcut.unregisterAll());
 }
-

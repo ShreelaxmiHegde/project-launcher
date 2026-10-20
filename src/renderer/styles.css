@@ -1,10 +1,7 @@
 :root {
   --bg: #000000;
-  --dropdown-outline: #ffffff;
-  --dropdown-text: #ff007e;
-  --divider: #6b6b6b;
-  --project-outline: #13e3f0;
-  --icon-outline: #e5e519;
+  --line: #ffffff;
+  --root-text: #ff007e;
   --text: #ffffff;
   --muted: #8a8a8a;
   --danger: #ff5c5c;
@@ -22,63 +19,81 @@ html, body, #root {
   user-select: none;
 }
 
-button { font: inherit; color: inherit; background: transparent; cursor: pointer; }
-button:focus-visible { outline: 1px dashed #fff; outline-offset: 2px; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: left; }
+button:focus-visible { outline: none; text-decoration: underline; text-underline-offset: 4px; }
 
 .app {
   position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 14px;
-  border: 1px solid #2a2a2a;
+  padding: 16px 16px 8px;
 }
 
-/* ---------- dropdown ---------- */
-.dropdown { position: relative; flex: none; }
+/* ---------- tree lines (thin white) ---------- */
+.branch { list-style: none; --x: 6px; --indent: 22px; }
+.branch > li { position: relative; padding-left: var(--indent); }
 
-.dropdown-button {
-  width: 100%;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
-  border: 1px solid var(--dropdown-outline);
-  border-radius: 8px;
-  color: var(--dropdown-text);
-  font-weight: 600;
-}
-
-.dropdown-menu {
+/* horizontal tick into the item */
+.branch > li::before {
+  content: '';
   position: absolute;
-  top: calc(100% + 6px);
+  left: var(--x);
+  top: 50%;
+  width: calc(var(--indent) - var(--x) - 4px);
+  height: 1px;
+  background: var(--line);
+}
+/* vertical trunk */
+.branch > li::after {
+  content: '';
+  position: absolute;
+  left: var(--x);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+.branch > li:first-child::after { top: 50%; }
+.branch.rooted > li:first-child::after { top: 0; }   /* hangs from the root above */
+.branch > li:last-child::after { bottom: 50%; }
+
+/* projects: bracket sits at the left edge of the project column */
+.projects { --x: 0px; --indent: 18px; flex: 1; min-width: 0; }
+
+/* ---------- root dropdown ---------- */
+.root { position: relative; flex: none; }
+
+.root-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 0 6px;
+  color: var(--root-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+.root-button:disabled { cursor: default; opacity: 0.6; }
+.root-button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.root-menu {
+  position: absolute;
+  top: 100%;
   left: 0;
   right: 0;
   z-index: 10;
-  max-height: 210px;
+  max-height: 220px;
   overflow-y: auto;
   list-style: none;
   background: var(--bg);
-  border: 1px solid var(--dropdown-outline);
-  border-radius: 8px;
+  border-bottom: 1px solid #555;
+  padding-bottom: 6px;
 }
-
-.dropdown-item {
+.root-item { display: block; width: 100%; padding: 7px 0; color: var(--root-text); font-weight: 700; }
+.root-item small {
   display: block;
-  width: 100%;
-  padding: 9px 14px;
-  text-align: left;
-  border: 0;
-  border-bottom: 1px solid #333;
-  color: var(--dropdown-text);
-  font-weight: 600;
-}
-.dropdown-menu li:last-child .dropdown-item { border-bottom: 0; }
-.dropdown-item small {
-  display: block;
-  margin-top: 2px;
+  margin-top: 1px;
   font-size: 11px;
   font-weight: 400;
   opacity: 0.65;
@@ -86,115 +101,63 @@ button:focus-visible { outline: 1px dashed #fff; outline-offset: 2px; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.dropdown-item[aria-selected='true'] { text-decoration: underline; text-underline-offset: 4px; }
-.dropdown-item:hover { border-bottom-color: var(--dropdown-text); }
+.root-item[aria-selected='true'] > span { text-decoration: underline; text-underline-offset: 4px; }
 
-.divider { flex: none; height: 1px; background: var(--divider); }
+/* ---------- tree ---------- */
+.scroll { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; padding-right: 4px; }
 
-/* ---------- project grid: 2 columns x 3 rows visible, scrolls beyond ---------- */
-.grid {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 84px;
-  gap: 12px;
-  align-content: start;
-  overflow-y: auto;
-  padding: 3px;
-}
+.tree > li { padding-top: 7px; padding-bottom: 7px; }
 
-.project {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  padding: 0 12px;
-  border: 1px solid var(--project-outline);
-  border-radius: 10px;
-  text-align: left;
-  transition: box-shadow 120ms ease;
-}
-.project:hover { box-shadow: 0 0 10px rgba(19, 227, 240, 0.5); }
+.cat-row { display: flex; align-items: center; min-height: 26px; }
 
-.project-icon {
+.cat-name {
   flex: none;
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--icon-outline);
-  border-radius: 8px;
+  width: 120px;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c);
+  font-weight: 700;
+  cursor: default;
 }
-.project-icon img { width: 24px; height: 24px; object-fit: contain; }
 
-.project-name {
+.link { flex: none; width: 18px; height: 1px; background: var(--line); }
+
+.projects > li { display: flex; align-items: center; min-height: 28px; }
+
+.proj {
   min-width: 0;
-  color: var(--text);
-  font-weight: 600;
-  line-height: 1.25;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  max-width: 100%;
+  padding: 2px 0;
   overflow: hidden;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c);
+  transition: text-shadow 120ms ease;
 }
+.proj:hover { text-shadow: 0 0 10px var(--c); text-decoration: underline; text-underline-offset: 4px; }
 
-.notice { grid-column: 1 / -1; color: var(--muted); font-size: 13px; line-height: 1.5; }
-.notice-error { color: var(--danger); }
+.notice { padding-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.notice.err { color: var(--danger); }
 
-/* ---------- open-with popup ---------- */
-.overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: var(--bg);
-}
+/* ---------- where to open ---------- */
+.overlay { position: absolute; inset: 0; z-index: 20; background: var(--bg); padding: 16px; }
 
-.modal {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 18px;
-  border: 1px solid var(--project-outline);
-  border-radius: 12px;
-}
-.modal-title { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
-.modal-path { margin-bottom: 6px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; user-select: text; }
+.sheet { display: flex; flex-direction: column; }
+.sheet-name { padding: 4px 0 2px; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.sheet-path { padding-bottom: 8px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; user-select: text; }
 
-.action {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--project-outline);
-  border-radius: 8px;
-  color: var(--text);
-  font-weight: 600;
-}
-.action:hover:not(:disabled) { box-shadow: 0 0 10px rgba(19, 227, 240, 0.5); }
-.action:disabled { opacity: 0.5; cursor: progress; }
-.action kbd {
-  min-width: 22px;
-  padding: 1px 6px;
-  border: 1px solid var(--divider);
-  border-radius: 5px;
-  color: var(--muted);
-  font: 600 11px 'Segoe UI', sans-serif;
-  text-align: center;
-}
+.opts > li { display: flex; align-items: center; min-height: 40px; }
+.opt { color: var(--text); font-weight: 600; }
+.opt:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 4px; }
+.opt:disabled { opacity: 0.5; cursor: progress; }
+.key { margin-left: 10px; color: var(--muted); font-size: 12px; font-weight: 400; }
 
-.modal-error { color: var(--danger); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
-.cancel { align-self: center; margin-top: 4px; border: 0; color: var(--muted); font-size: 12px; }
+.sheet-error { margin-top: 10px; color: var(--danger); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.cancel { align-self: flex-start; margin-top: 16px; color: var(--muted); font-size: 12px; }
 .cancel:hover { color: var(--text); }
 
-/* ---------- thin scrollbars (no fills beyond the thumb) ---------- */
+/* ---------- scrollbar ---------- */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }

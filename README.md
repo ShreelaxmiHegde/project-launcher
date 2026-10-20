@@ -19,40 +19,45 @@ Requires Node 18+ and VS Code's `code` command on PATH (VS Code installer: "Add 
 | Action | How |
 | --- | --- |
 | Show / hide popup | `Ctrl+Alt+P` (configurable) or left-click the tray icon |
-| Switch category | Click the dropdown at the top |
-| Open a project | Click it, or press `1`-`9` |
+| Switch parent folder | Click the pink dropdown at the top (your choice is remembered) |
+| Open a project | Click a project name in the tree |
 | Choose how to open | Click, or press `V` (VS Code) / `E` (File Explorer) |
 | Close | `Esc`, or click anywhere outside the popup |
 
 The tray menu has: Show launcher, Edit projects.json, Reload config, Start with Windows, Quit.
-The config is re-read every time the popup opens, so edits apply immediately.
+The config is re-read and the folders are re-scanned every time the popup opens, so new
+folders and config edits show up immediately.
+
+## How folders map to the tree
+
+```
+C:\Dev                  <- parent folder (listed in projects.json, shown in the dropdown)
+  Work                  <- immediate child  = category
+    billing-api         <- its immediate child = project (clickable)
+    admin-portal
+  Personal
+    blog
+```
+
+Hidden folders (starting with `.` or `$`) and `node_modules` are skipped. Category folders with
+no sub-folders are shown in gray and are not clickable.
 
 ## Configuration
 
-On first run the app creates `%APPDATA%\project-launcher\projects.json` (open it from the tray menu).
-`config/projects.sample.json` shows the full format:
+Development: `config/projects.json` is used if it exists. Otherwise (and in packaged builds):
+`%APPDATA%\project-launcher\projects.json` (open it from the tray menu).
 
 ```json
 {
   "shortcut": "Control+Alt+P",
   "vscodeCommand": "code",
-  "categories": [
-    {
-      "name": "Work",
-      "path": "C:\\Dev\\Work",
-      "projects": [
-        { "name": "Billing API", "path": "C:\\Dev\\Work\\billing-api" },
-        { "name": "Mobile App", "path": "C:\\Dev\\Work\\mobile-app", "icon": "C:\\Dev\\icons\\mobile.png" }
-      ]
-    }
-  ]
+  "parentFolders": ["C:\\Dev", "D:\\Clients", "~/Documents/Code"]
 }
 ```
 
+- `parentFolders`: any number of folders. `~` and `%ENV_VARS%` are expanded. Backslashes must be doubled in JSON.
 - `shortcut`: any [Electron accelerator](https://www.electronjs.org/docs/latest/api/accelerator).
-- `categories[].path`: the main folder shown under the category name in the dropdown.
-- `icon` (optional): png/jpg/svg/ico under 256 KB. Defaults to the yellow folder outline.
-- Backslashes must be doubled in JSON.
+- `vscodeCommand`: command that starts VS Code (default `code`).
 
 ## Structure
 
@@ -60,6 +65,7 @@ On first run the app creates `%APPDATA%\project-launcher\projects.json` (open it
 src/main/main.ts       window, shortcut, tray, IPC handlers
 src/main/config.ts     load + validate projects.json
 src/preload/preload.ts contextBridge API (window.launcher)
+src/main/scan.ts       parent -> category -> project folder scanning
 src/renderer/          React UI (App.tsx, styles.css)
 src/shared/types.ts    types shared by all three
 ```
@@ -67,5 +73,5 @@ src/shared/types.ts    types shared by all three
 ## Security notes
 
 - `contextIsolation` on, `nodeIntegration` off, renderer sandboxed, strict CSP in packaged builds.
-- The renderer can only ask the main process to open paths that appear in `projects.json`.
+- The renderer can only scan configured parent folders and open folders exactly two levels below them.
 - Navigation and new windows are blocked.

@@ -1,0 +1,9 @@
+{
+  "shortcut": "Control+Alt+P",
+  "vscodeCommand": "code",
+  "parentFolders": [
+    "C:\\Dev",
+    "D:\\Clients",
+    "~/Documents/Code"
+  ]
+}
