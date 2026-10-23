@@ -11,11 +11,11 @@ import {
   shell,
   Tray
 } from 'electron';
-import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getConfigPath, loadConfig } from './config';
 import { isConfiguredParent, isProjectPath, scanParent } from './scan';
+import { launchVsCode } from './vscode';
 import type { LoadResult, OpenResult, OpenTarget, ScanResult } from '../shared/types';
 
 const WIN_WIDTH = 460;
@@ -178,36 +178,6 @@ function createTray(): void {
 }
 
 /* ------------------------------------------------------------------- IPC */
-
-function launchVsCode(command: string, folder: string): Promise<OpenResult> {
-  return new Promise((resolve) => {
-    // `code` is a .cmd shim on Windows, so it needs a shell. Quote both parts for spaces.
-    const child = spawn(`"${command}"`, [`"${folder}"`], {
-      shell: true,
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true
-    });
-
-    const timer = setTimeout(() => resolve({ ok: true }), 4000);
-    child.on('error', (err) => {
-      clearTimeout(timer);
-      resolve({ ok: false, error: `Could not start VS Code: ${err.message}` });
-    });
-    child.on('exit', (code) => {
-      clearTimeout(timer);
-      resolve(
-        code === 0 || code === null
-          ? { ok: true }
-          : {
-              ok: false,
-              error: `VS Code command "${command}" failed. Check "vscodeCommand" in projects.json.`
-            }
-      );
-    });
-    child.unref();
-  });
-}
 
 function registerIpc(): void {
   ipcMain.handle('launcher:get-config', (): LoadResult => lastResult);
